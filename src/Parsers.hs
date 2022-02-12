@@ -1,4 +1,14 @@
-module Parsers (someFunc) where
+module Parsers (
+  Predicate,
+  ParsingError,
+  ParsingResult,
+  ParsingResponse,
+  Parser
+  ) where
 
-someFunc :: IO ()
-someFunc = putStrLn "someFunc"
+type Predicate a = a -> Bool
+
+type ParsingError = (Int, String)
+type ParsingResult a = (a, String)
+type ParsingResponse a = Either ParsingError (ParsingResult a)
+type Parser a = String -> ParsingResponse a
