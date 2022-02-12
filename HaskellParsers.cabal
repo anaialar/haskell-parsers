@@ -48,6 +48,11 @@ test-suite TokenParsing-test
     type:             exitcode-stdio-1.0
     hs-source-dirs:   test
     main-is:          TokenParsingTest.hs
+
+    other-modules:
+        Testing
+
     build-depends:
         base ^>=4.15.1.0,
+        random ^>= 1.2.1,
         HaskellParsers

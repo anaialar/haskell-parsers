@@ -29,8 +29,11 @@ type ParsingResponse a = Either ParsingError (ParsingResult a)
 type Parser a = String -> ParsingResponse a
 
 -- Error handlers
-unhandledParsingError = Left (-1, "") :: ParsingResponse a
-characterParsingError x y p = Left (p, "Unexpected character " ++ [x] ++ ". Expected " ++ [y] ++ ".")
+unhandledParsingError :: ParsingResponse a
+unhandledParsingError = Left (-1, "")
+
+characterParsingError :: Char -> Char -> Int -> ParsingResponse a
+characterParsingError x y p = Left (p, "Unexpected character `" ++ [x] ++ "`. Expected `" ++ [y] ++ "`.")
 
 -- Parsing utilities
 parseCharacter :: Predicate Char -> Parser Char
@@ -43,6 +46,9 @@ parseString :: Predicate Char -> Parser String
 parseString p = return . parseString'
   where
     parseString' :: String -> (String, String)
+
+    parseString' "" = ("", "")
+
     parseString' ys@(x:xs)
       | p x = let
           (result, rest) = parseString' xs
@@ -60,6 +66,7 @@ parseNumber xs@(y:ys)
   | otherwise = unhandledParsingError
   where
     parseNumber' :: Bool -> Parser String
+    parseNumber' _ "" = return ("", "")
     parseNumber' hasSeperator (x:xs)
       | isDigit x = do
         (result, rest) <- parseNumber' hasSeperator xs
@@ -70,15 +77,17 @@ parseNumber xs@(y:ys)
           else do
             (result, rest) <- parseNumber' hasSeperator xs
             return (x : result, rest)
-      | otherwise = unhandledParsingError
+      | otherwise = return ("", "")
 
 matchCharacter :: Char -> Parser Char
+matchCharacter x [] = characterParsingError '\0' x $ -1
 matchCharacter x xs@(y:_) =
   case parseCharacter (==x) xs of
     Left _ -> characterParsingError y x $ -1
     result -> result
 
 matchCharacterIgnoringSpaces :: Char -> Parser Char
+matchCharacterIgnoringSpaces x [] = characterParsingError '\0' x $ -1
 matchCharacterIgnoringSpaces x xs@(y:ys)
   | isSpace y = matchCharacterIgnoringSpaces x ys
   | otherwise =
