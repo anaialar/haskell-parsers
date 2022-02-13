@@ -21,6 +21,7 @@ extra-source-files: CHANGELOG.md
 library
     exposed-modules:
         Parsers,
+        Stringify,
         Parsers.Json
 
     -- other-modules:

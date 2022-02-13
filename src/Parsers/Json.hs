@@ -1,10 +1,12 @@
 module Parsers.Json (
-  JsonData,
+  JsonData (JsonNull, JsonNumber, JsonBool, JsonString, JsonArray, JsonObject),
+  stringifyJson,
+  formattedStringifyJson,
   parseJson
   ) where
 
 import Data.Char (isSpace, isDigit)
-import Data.Map.Strict (Map, insert, empty)
+import Data.Map.Strict (Map, insert, empty, toList)
 import Parsers (
   Parser,
   (<&&>),
@@ -16,12 +18,91 @@ import Parsers (
   matchCharacterIgnoringSpaces
   )
 
+import Stringify (
+  Stringifier,
+  FormattedStringifier,
+  getIndentation
+  )
+
 data JsonData = JsonNull
               | JsonNumber Double
               | JsonBool Bool
               | JsonString String
               | JsonArray [JsonData]
-              | JsonObject (Map String JsonData) deriving (Show)
+              | JsonObject (Map String JsonData)
+
+instance Show JsonData where
+  show = formattedStringifyJson "    "
+
+stringifyJson :: Stringifier JsonData
+stringifyJson (JsonNull) = "null"
+stringifyJson (JsonNumber d) = show d
+stringifyJson (JsonBool True) = "true"
+stringifyJson (JsonBool False) = "false"
+stringifyJson (JsonString xs) = '"' : (xs ++ "\"")
+
+stringifyJson (JsonArray xs) = stringifyJsonArray "[" xs
+  where
+    stringifyJsonArrayEntry :: String -> String -> Stringifier JsonData
+    stringifyJsonArrayEntry acc e x = acc ++ (stringifyJson x) ++ e
+
+    stringifyJsonArray :: String -> Stringifier [JsonData]
+    stringifyJsonArray _ [] = "[]"
+    stringifyJsonArray acc [x] = stringifyJsonArrayEntry acc "]" x
+    stringifyJsonArray acc (x:xs) =
+      let
+        acc' = stringifyJsonArrayEntry acc "," x
+      in stringifyJsonArray acc' xs
+
+stringifyJson (JsonObject xs) = stringifyJsonObject "{" $ toList xs
+  where
+    stringifyJsonObjectProperty :: String -> String -> Stringifier (String, JsonData)
+    stringifyJsonObjectProperty acc e (k, v) = acc ++ "\"" ++ k ++ "\":" ++ (stringifyJson v) ++ e
+
+    stringifyJsonObject :: String -> Stringifier [(String, JsonData)]
+    stringifyJsonObject _ [] = "{}"
+    stringifyJsonObject acc [x] = stringifyJsonObjectProperty acc "}" x
+    stringifyJsonObject acc (x:xs) =
+      let
+        acc' = stringifyJsonObjectProperty acc "," x
+      in stringifyJsonObject acc' xs
+
+formattedStringifyJson :: FormattedStringifier JsonData
+formattedStringifyJson i = formattedStringifyJson' 0
+  where
+    getIndentation' = getIndentation i
+
+    formattedStringifyJson' :: Int -> JsonData -> String
+    formattedStringifyJson' i (JsonArray xs) = formattedStringifyJsonArray "[\n" xs
+      where
+        i' = getIndentation' (i + 1)
+
+        formattedStringifyJsonArrayEntry :: String -> String -> Stringifier JsonData
+        formattedStringifyJsonArrayEntry acc e x = acc ++ i' ++ (formattedStringifyJson' (i + 1) x) ++ e
+
+        formattedStringifyJsonArray :: String -> [JsonData] -> String
+        formattedStringifyJsonArray _ [] = "[]"
+        formattedStringifyJsonArray acc [x] = formattedStringifyJsonArrayEntry acc ("\n" ++ (getIndentation' i) ++ "]") x
+        formattedStringifyJsonArray acc (x:xs) =
+          let
+            acc' = formattedStringifyJsonArrayEntry acc ",\n" x
+          in formattedStringifyJsonArray acc' xs
+
+    formattedStringifyJson' i (JsonObject xs) = formattedStringifyJsonObject "{\n" $ toList xs
+      where
+        i' = getIndentation' (i + 1)
+        formattedStringifyJsonObjectProperty :: String -> String -> Stringifier (String, JsonData)
+        formattedStringifyJsonObjectProperty acc e (k, v) = acc ++ i' ++ "\"" ++ k ++ "\": " ++ (formattedStringifyJson' (i + 1) v) ++ e
+
+        formattedStringifyJsonObject :: String -> Stringifier [(String, JsonData)]
+        formattedStringifyJsonObject _ [] = "{}"
+        formattedStringifyJsonObject acc [x] = formattedStringifyJsonObjectProperty acc ("\n" ++ (getIndentation' i) ++ "}") x
+        formattedStringifyJsonObject acc (x:xs) =
+          let
+            acc' = formattedStringifyJsonObjectProperty acc ",\n" x
+          in formattedStringifyJsonObject acc' xs
+
+    formattedStringifyJson' _ x = stringifyJson x
 
 parseJsonValue :: Parser JsonData
 parseJsonValue ('"':xs) = do
