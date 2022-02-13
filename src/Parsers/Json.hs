@@ -7,6 +7,7 @@ import Data.Char (isSpace, isDigit)
 import Data.Map.Strict (Map, insert, empty)
 import Parsers (
   Parser,
+  (<&&>),
   unhandledParsingError,
   parseNumber,
   parseBool,
@@ -39,7 +40,7 @@ parseJsonValue xs =
 
 parseJsonObjectProperty :: Parser (String, JsonData)
 parseJsonObjectProperty ('"':xs) = do
-  (key, rest') <- parseString (/='"') xs
+  (key, rest') <- parseString ((/='"') <&&> (/='\t')) xs
   (_, rest') <- matchCharacterIgnoringSpaces ':' $ tail rest'
   (value, rest) <- parseJson rest'
   return ((key, value), rest)

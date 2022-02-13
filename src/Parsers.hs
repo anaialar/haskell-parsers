@@ -5,6 +5,11 @@ module Parsers (
   ParsingResponse,
   Parser,
 
+-- Predicate utilities
+  (<||>),
+  (<&&>),
+  pNot,
+
 -- Error handlers export
 
   unhandledParsingError,
@@ -28,6 +33,16 @@ type ParsingError = (Int, String)
 type ParsingResult a = (a, String)
 type ParsingResponse a = Either ParsingError (ParsingResult a)
 type Parser a = String -> ParsingResponse a
+
+-- Predicate utilities
+(<||>) :: Predicate a -> Predicate a -> Predicate a
+(<||>) predicateA predicateB x = predicateA x || (predicateB x)
+
+(<&&>) :: Predicate a -> Predicate a -> Predicate a
+(<&&>) predicateA predicateB x = predicateA x && (predicateB x)
+
+pNot :: Predicate a -> Predicate a
+pNot predicateA = not . predicateA
 
 -- Error handlers
 unhandledParsingError :: ParsingResponse a
@@ -66,7 +81,7 @@ parseNumber xs@(y:ys)
   where
     parseNumber' :: Bool -> Parser String
     parseNumber' _ "" = return ("", "")
-    parseNumber' hasSeperator (x:xs)
+    parseNumber' hasSeperator ys@(x:xs)
       | isDigit x = do
         (result, rest) <- parseNumber' hasSeperator xs
         return (x : result, rest)
@@ -76,7 +91,7 @@ parseNumber xs@(y:ys)
           else do
             (result, rest) <- parseNumber' hasSeperator xs
             return (x : result, rest)
-      | otherwise = return ("", "")
+      | otherwise = return ("", ys)
 
 parseBool :: String -> String -> Parser Bool
 parseBool txs fxs xs =
