@@ -14,6 +14,7 @@ module Parsers (
   parseCharacter,
   parseString,
   parseNumber,
+  parseBool,
   matchCharacter,
   matchCharacterIgnoringSpaces,
   matchString
@@ -46,14 +47,12 @@ parseString :: Predicate Char -> Parser String
 parseString p = return . parseString'
   where
     parseString' :: String -> (String, String)
-
     parseString' "" = ("", "")
-
     parseString' ys@(x:xs)
       | p x = let
           (result, rest) = parseString' xs
         in (x : result, rest)
-      | otherwise = ("", xs)
+      | otherwise = ("", ys)
 
 parseNumber :: Parser Double
 parseNumber xs@(y:ys)
@@ -79,6 +78,15 @@ parseNumber xs@(y:ys)
             return (x : result, rest)
       | otherwise = return ("", "")
 
+parseBool :: String -> String -> Parser Bool
+parseBool txs fxs xs =
+  case matchString txs xs of
+    Left _ -> do
+      (_, rest) <- matchString fxs xs
+      return (False, rest)
+
+    Right (_, rest) -> return (True, rest)
+
 matchCharacter :: Char -> Parser Char
 matchCharacter x [] = characterParsingError '\0' x $ -1
 matchCharacter x xs@(y:_) =
@@ -90,10 +98,7 @@ matchCharacterIgnoringSpaces :: Char -> Parser Char
 matchCharacterIgnoringSpaces x [] = characterParsingError '\0' x $ -1
 matchCharacterIgnoringSpaces x xs@(y:ys)
   | isSpace y = matchCharacterIgnoringSpaces x ys
-  | otherwise =
-    case parseCharacter (==x) xs of
-      Left _ -> characterParsingError y x $ -1
-      result -> result
+  | otherwise = matchCharacter x xs
 
 matchString :: String -> Parser String
 matchString xs = matchString' xs
