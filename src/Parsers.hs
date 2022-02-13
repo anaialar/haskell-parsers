@@ -14,6 +14,7 @@ module Parsers (
 
   unhandledParsingError,
   characterParsingError,
+  badToken,
 
 -- Parsing utilities export
   parseCharacter,
@@ -50,6 +51,9 @@ unhandledParsingError = Left (-1, "")
 
 characterParsingError :: Char -> Char -> Int -> ParsingResponse a
 characterParsingError x y p = Left (p, "Unexpected character `" ++ [x] ++ "`. Expected `" ++ [y] ++ "`.")
+
+badToken :: Int -> ParsingResponse a
+badToken p = Left (p, "Bad token at " ++ (show p))
 
 -- Parsing utilities
 parseCharacter :: Predicate Char -> Parser Char

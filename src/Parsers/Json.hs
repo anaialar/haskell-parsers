@@ -11,6 +11,7 @@ import Parsers (
   Parser,
   (<&&>),
   unhandledParsingError,
+  badToken,
   parseNumber,
   parseBool,
   parseString,
@@ -114,8 +115,9 @@ parseJsonValue xs =
     Left _ ->
       case parseBool "true" "false" xs of
         Left _ -> do
-          (result, rest) <- matchString "null" xs
-          return (JsonNull, rest)
+          case matchString "null" xs of
+            Left _ -> badToken (-1)
+            Right (_, rest) -> return (JsonNull, rest)
         Right (result, rest) -> return (JsonBool result, rest)
     Right (result, rest) -> return (JsonNumber result, rest)
 
@@ -135,13 +137,15 @@ parseJsonObject = parseJsonObject' empty
   where
     parseJsonObject' :: Map String JsonData -> Parser JsonData
     parseJsonObject' _ "" = unhandledParsingError
-    parseJsonObject' acc xs = do
-      ((key, value), rest) <- parseJsonObjectProperty xs
-      case matchCharacterIgnoringSpaces ',' rest of
-        Left _ -> do
-          (_, rest') <- matchCharacterIgnoringSpaces '}' rest
-          return (JsonObject $ insert key value acc, rest')
-        Right (_, rest') -> parseJsonObject' (insert key value acc) rest'
+    parseJsonObject' acc xs =
+      case parseJsonObjectProperty xs of
+        Left _ -> badToken (-1)
+        Right ((key, value), rest) ->
+          case matchCharacterIgnoringSpaces ',' rest of
+            Left _ -> do
+              (_, rest') <- matchCharacterIgnoringSpaces '}' rest
+              return (JsonObject $ insert key value acc, rest')
+            Right (_, rest') -> parseJsonObject' (insert key value acc) rest'
 
 parseJsonArray :: Parser JsonData
 parseJsonArray = parseJsonArray' []
