@@ -1,10 +1,16 @@
 module Main (main) where
 
 import qualified Parsers.Json (parseJson, stringifyJson)
+import qualified Testing (runTests, success, failure)
 
-main :: IO ()
-main = do
+jsonParsingTest :: IO Bool
+jsonParsingTest = do
   jsonTestData <- readFile "test/jsonTestData.json"
   case Parsers.Json.parseJson jsonTestData of
-    Right (result, _) -> putStrLn $ show result
-    Left r -> fail $ show r
+    Right (result, _) -> do
+      putStrLn $ show result
+      Testing.success "Json"
+    Left r -> Testing.failure "Json"
+
+main :: IO ()
+main = Testing.runTests [jsonParsingTest]

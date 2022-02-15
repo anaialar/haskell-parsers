@@ -1,8 +1,10 @@
 module Testing (
   success,
   failure,
-  testIsSuccessful
+  runTests
   ) where
+
+import System.Exit (exitFailure)
 
 testResult :: Bool -> String -> IO Bool
 testResult s xs = do
@@ -10,10 +12,10 @@ testResult s xs = do
   return s
 
 success :: String -> IO Bool
-success = testResult True . ("✔ "++)
+success = testResult True . ("✔ "++) . (++" parsing test successful.")
 
 failure :: String -> IO Bool
-failure = testResult True . ("❌ "++)
+failure = testResult True . ("❌ "++) . (++" parsing test failed.")
 
 testIsSuccessful :: [IO Bool] -> IO Bool
 testIsSuccessful [] = return True
@@ -22,3 +24,10 @@ testIsSuccessful (x:xs) = do
   if y
     then testIsSuccessful xs
     else return y
+
+runTests :: [IO Bool] -> IO ()
+runTests tests = do
+  success <- testIsSuccessful tests
+  if success
+    then return ()
+    else exitFailure

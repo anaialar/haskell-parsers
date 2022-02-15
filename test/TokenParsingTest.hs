@@ -1,9 +1,8 @@
 module Main (main) where
 
 import System.Random (randomRIO)
-import System.Exit (exitFailure)
 import qualified Parsers (parseNumber, parseBool)
-import Testing (testIsSuccessful, success, failure)
+import qualified Testing (runTests, success, failure)
 
 numberParsingTest :: IO Bool
 numberParsingTest = do
@@ -11,8 +10,8 @@ numberParsingTest = do
   let response = Parsers.parseNumber (show num)
   case response of
     Right (result, _)
-      | result == num -> success "Number parsing test successful."
-    _ -> failure "Number parsing test failed."
+      | result == num -> Testing.success "Number"
+    _ -> Testing.failure "Number"
 
 boolParsingText :: IO Bool
 boolParsingText = do
@@ -21,13 +20,8 @@ boolParsingText = do
   let response = Parsers.parseBool "True" "False" (show x)
   case response of
     Right (result, _)
-      | result == x -> success "Bool parsing test successful."
-    _ -> failure "Bool parsing test failed."
+      | result == x -> Testing.success "Bool"
+    _ -> Testing.failure "Bool"
 
 main :: IO ()
-main = do
-  let tests = [boolParsingText, numberParsingTest]
-  success <- testIsSuccessful tests
-  if success
-    then return ()
-    else exitFailure
+main = Testing.runTests [boolParsingText, numberParsingTest]
