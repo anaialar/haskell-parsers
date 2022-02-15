@@ -3,6 +3,7 @@ module Parsers (
   ParsingError,
   ParsingResult,
   ParsingResponse,
+  ParsedNumber,
   Parser,
 
 -- Predicate utilities
@@ -27,8 +28,11 @@ module Parsers (
   ) where
 
 import Data.Char (isSpace, isDigit)
+import Data.Number.CReal (CReal)
 
 type Predicate a = a -> Bool
+
+type ParsedNumber = CReal
 
 type ParsingError = (Int, String)
 type ParsingResult a = (a, String)
@@ -73,7 +77,7 @@ parseString p = return . parseString'
         in (x : result, rest)
       | otherwise = ("", ys)
 
-parseNumber :: Parser Double
+parseNumber :: Parser CReal
 parseNumber xs@(y:ys)
   | isDigit y = do
     (result, rest) <- parseNumber' False xs

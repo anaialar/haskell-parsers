@@ -9,6 +9,7 @@ import Data.Char (isSpace, isDigit)
 import Data.Map.Strict (Map, insert, empty, toList)
 import Parsers (
   Parser,
+  ParsedNumber,
   (<&&>),
   unhandledParsingError,
   badToken,
@@ -26,7 +27,7 @@ import Stringify (
   )
 
 data JsonData = JsonNull
-              | JsonNumber Double
+              | JsonNumber ParsedNumber
               | JsonBool Bool
               | JsonString String
               | JsonArray [JsonData]
