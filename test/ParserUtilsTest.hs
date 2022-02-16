@@ -1,14 +1,14 @@
 module Main (main) where
 
 import System.Random (randomRIO)
-import qualified Parsers (ParsedNumber, parseNumber, parseBool)
+import qualified Parsers.Utils (ParsedNumber, parseNumber, parseBool)
 import qualified Testing (runTests, success, failure)
 
 numberParsingTest :: IO Bool
 numberParsingTest = do
   num' <- randomRIO (-696969.420420, 696969.420420) :: IO Double
-  let num = fromRational $ toRational num' :: Parsers.ParsedNumber
-  let response = Parsers.parseNumber (show num)
+  let num = fromRational $ toRational num' :: Parsers.Utils.ParsedNumber
+  let response = Parsers.Utils.parseNumber (show num)
   case response of
     Right (result, _)
       | result == num -> Testing.success "Number"
@@ -17,9 +17,9 @@ numberParsingTest = do
 boolParsingText :: IO Bool
 boolParsingText = do
   num' <- randomRIO (1, 2) :: IO Double
-  let num = fromRational $ toRational num' :: Parsers.ParsedNumber
+  let num = fromRational $ toRational num' :: Parsers.Utils.ParsedNumber
   let x = num > 1.5
-  let response = Parsers.parseBool "True" "False" (show x)
+  let response = Parsers.Utils.parseBool "True" "False" (show x)
   case response of
     Right (result, _)
       | result == x -> Testing.success "Bool"

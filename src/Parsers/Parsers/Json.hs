@@ -5,9 +5,9 @@ module Parsers.Json (
   parseJson
   ) where
 
-import Data.Char (isSpace, isDigit)
+import Data.Char (isSpace)
 import Data.Map.Strict (Map, insert, empty, toList)
-import Parsers (
+import Parsers.Utils (
   Parser,
   ParsedNumber,
   (<&&>),
@@ -20,7 +20,7 @@ import Parsers (
   matchCharacterIgnoringSpaces
   )
 
-import Stringify (
+import Parsers.Utils.Stringify (
   Stringifier,
   FormattedStringifier,
   getIndentation

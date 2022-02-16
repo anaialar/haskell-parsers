@@ -1,4 +1,4 @@
-module Stringify (
+module Parsers.Utils.Stringify (
   Stringifier,
   FormattedStringifier,
   getIndentation

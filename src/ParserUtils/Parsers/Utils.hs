@@ -1,4 +1,4 @@
-module Parsers (
+module Parsers.Utils (
   Predicate,
   ParsingError,
   ParsingResult,
