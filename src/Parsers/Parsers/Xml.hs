@@ -89,17 +89,19 @@ parseXmlElementAttributes = parseXmlElementAttributes' empty
 parseXmlElementChildren :: String -> Parser [XmlData]
 parseXmlElementChildren tag = parseXmlElementChildren' []
   where
-    endTag = "</" ++ tag ++ ">"
+    endTag = "</" ++ tag
 
     parseXmlElementChildren' :: [XmlData] -> Parser [XmlData]
-    parseXmlElementChildren' _ [] = unexpectedTokenError "\0" endTag $ -1
+    parseXmlElementChildren' _ [] = unexpectedTokenError "\0" (endTag ++ ">") $ -1
     parseXmlElementChildren' acc xs =
       case matchStringIgnoringTrailingSpaces endTag xs of
         Left _ -> do
           (child, rest) <- parseXml xs
           parseXmlElementChildren' (child : acc) rest
 
-        Right (_, rest') -> return (acc, rest')
+        Right (_, rest') -> do
+          (_, rest) <- matchCharacterIgnoringSpaces '>' rest'
+          return (acc, rest)
 
 parseXmlElement :: Parser XmlData
 parseXmlElement xs = do
