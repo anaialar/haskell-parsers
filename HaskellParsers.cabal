@@ -32,7 +32,8 @@ library HaskellParserUtils
 
 library
     exposed-modules:
-        Parsers.Json
+        Parsers.Json,
+        Parsers.Xml
 
     -- other-modules:
 
@@ -75,6 +76,19 @@ test-suite JsonParsing-test
     type:             exitcode-stdio-1.0
     hs-source-dirs:   test
     main-is:          JsonParsingTest.hs
+
+    other-modules:
+        Testing
+
+    build-depends:
+        base ^>=4.15.1.0,
+        HaskellParsers
+
+test-suite XmlParsing-test
+    default-language: Haskell2010
+    type:             exitcode-stdio-1.0
+    hs-source-dirs:   test
+    main-is:          XmlParsingTest.hs
 
     other-modules:
         Testing

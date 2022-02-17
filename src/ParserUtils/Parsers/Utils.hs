@@ -14,7 +14,7 @@ module Parsers.Utils (
 -- Error handlers export
 
   unhandledParsingError,
-  characterParsingError,
+  unexpectedTokenError,
   badToken,
 
 -- Parsing utilities export
@@ -24,7 +24,8 @@ module Parsers.Utils (
   parseBool,
   matchCharacter,
   matchCharacterIgnoringSpaces,
-  matchString
+  matchString,
+  matchStringIgnoringTrailingSpaces
   ) where
 
 import Data.Char (isSpace, isDigit)
@@ -53,8 +54,8 @@ pNot predicateA = not . predicateA
 unhandledParsingError :: ParsingResponse a
 unhandledParsingError = Left (-1, "")
 
-characterParsingError :: Char -> Char -> Int -> ParsingResponse a
-characterParsingError x y p = Left (p, "Unexpected character `" ++ [x] ++ "`. Expected `" ++ [y] ++ "`.")
+unexpectedTokenError :: String -> String -> Int -> ParsingResponse a
+unexpectedTokenError x y p = Left (p, "Unexpected character `" ++ x ++ "`. Expected `" ++ y ++ "`.")
 
 badToken :: Int -> ParsingResponse a
 badToken p = Left (p, "Bad token at " ++ (show p))
@@ -111,14 +112,14 @@ parseBool txs fxs xs =
     Right (_, rest) -> return (True, rest)
 
 matchCharacter :: Char -> Parser Char
-matchCharacter x [] = characterParsingError '\0' x $ -1
+matchCharacter x [] = unexpectedTokenError "\0" [x] $ -1
 matchCharacter x xs@(y:_) =
   case parseCharacter (==x) xs of
-    Left _ -> characterParsingError y x $ -1
+    Left _ -> unexpectedTokenError [y] [x] $ -1
     result -> result
 
 matchCharacterIgnoringSpaces :: Char -> Parser Char
-matchCharacterIgnoringSpaces x [] = characterParsingError '\0' x $ -1
+matchCharacterIgnoringSpaces x [] = unexpectedTokenError "\0" [x] $ -1
 matchCharacterIgnoringSpaces x xs@(y:ys)
   | isSpace y = matchCharacterIgnoringSpaces x ys
   | otherwise = matchCharacter x xs
@@ -127,7 +128,13 @@ matchString :: String -> Parser String
 matchString xs = matchString' xs
   where
     matchString' [] ys = return (xs, ys)
-    matchString' _ [] = unhandledParsingError
+    matchString' _ [] = unexpectedTokenError xs "\0" $ -1
     matchString' (x:xs) (y:ys)
       | x == y = matchString' xs ys
       | otherwise = unhandledParsingError
+
+matchStringIgnoringTrailingSpaces :: String -> Parser String
+matchStringIgnoringTrailingSpaces xs [] = unexpectedTokenError xs "\0" $ -1
+matchStringIgnoringTrailingSpaces xs ys@(y:ys')
+  | isSpace y = matchStringIgnoringTrailingSpaces xs ys'
+  | otherwise = matchString xs ys
