@@ -1,5 +1,6 @@
 module Parsers.Xml (
-  parseXml
+  parseXml,
+  stringifyXml
   ) where
 
 import Data.Char (isSpace, isLetter)
@@ -15,13 +16,30 @@ import Parsers.Utils (
   matchStringIgnoringTrailingSpaces
   )
 
-data XmlElement = XmlElement {
-  tag :: String,
-  attributes :: (Map String String),
-  children :: Maybe [XmlData]
-} deriving (Show)
+import Parsers.Utils.Stringify (
+  Stringifier
+  )
 
-data XmlData = XmlString String | XmlDataElement XmlElement deriving(Show)
+data XmlData = XmlString String
+             | XmlElement {
+                tag :: String,
+                attributes :: (Map String String),
+                children :: Maybe [XmlData]
+              } deriving(Show)
+
+stringifyXmlElementAttributes :: Stringifier (Map String String)
+stringifyXmlElementAttributes = foldl f "" . toList
+  where
+    f acc (key, value) = " " ++ key ++ "=" ++ value ++ acc
+
+stringifyXml :: Stringifier XmlData
+stringifyXml (XmlString xs) = xs
+stringifyXml (XmlElement tag attributes children) = x ++ y
+  where
+    x = "<" ++ tag ++ (stringifyXmlElementAttributes attributes)
+    y = case children of
+      Just c -> ">" ++ (concat $ map stringifyXml c) ++ "</" ++ tag ++ ">"
+      Nothing -> "/>"
 
 parseXmlElementAttributes :: Parser ((Map String String), Bool)
 parseXmlElementAttributes = parseXmlElementAttributes' empty
@@ -71,7 +89,7 @@ parseXmlElement xs = do
     attributes = attributes,
     children = children
   }
-  return (XmlDataElement element, rest)
+  return (element, rest)
 
 parseXmlString :: Parser XmlData
 parseXmlString xs = do
