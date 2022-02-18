@@ -33,7 +33,8 @@ library HaskellParserUtils
 library
     exposed-modules:
         Parsers.Json,
-        Parsers.Xml
+        Parsers.Xml,
+        Parsers
 
     -- other-modules:
 

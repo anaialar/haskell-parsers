@@ -6,7 +6,7 @@ module Parsers.Json (
   ) where
 
 import Data.Char (isSpace)
-import Data.Map.Strict (Map, insert, empty, toList)
+import Data.Map.Strict (Map, insert, empty, toList, fromList)
 import Parsers.Utils (
   Parser,
   ParsedNumber,
@@ -24,6 +24,9 @@ import Parsers.Utils.Stringify (
   Stringifier,
   FormattedStringifier,
   getIndentation
+  )
+import Parsers.Xml (
+  XmlData (XmlString, XmlElement)
   )
 
 data JsonData = JsonNull

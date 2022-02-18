@@ -1,5 +1,5 @@
 module Parsers.Xml (
-  XmlData (XmlString, XmlElement),
+  XmlData (XmlString, XmlElement, tag, attributes, children),
   parseXml,
   stringifyXml,
   formattedStringifyXml
@@ -29,7 +29,7 @@ data XmlData = XmlString String
              | XmlElement {
                 tag :: String,
                 attributes :: (Map String String),
-                children :: Maybe [XmlData]
+                children :: [XmlData]
               }
 
 instance Show XmlData where
@@ -38,7 +38,7 @@ instance Show XmlData where
 stringifyXmlElementAttributes :: Stringifier (Map String String)
 stringifyXmlElementAttributes = foldl f "" . toList
   where
-    f acc (key, value) = " " ++ key ++ "=" ++ value ++ acc
+    f acc (key, value) = " " ++ key ++ "=\"" ++ value ++ "\"" ++ acc
 
 stringifyXml :: Stringifier XmlData
 stringifyXml (XmlString xs) = xs
@@ -46,8 +46,8 @@ stringifyXml (XmlElement tag attributes children) = x ++ y
   where
     x = "<" ++ tag ++ (stringifyXmlElementAttributes attributes)
     y = case children of
-      Just c -> ">" ++ (concat $ map stringifyXml c) ++ "</" ++ tag ++ ">"
-      Nothing -> "/>"
+      [] -> "/>"
+      c -> ">" ++ (concat $ map stringifyXml c) ++ "</" ++ tag ++ ">"
 
 formattedStringifyXml :: FormattedStringifier XmlData
 formattedStringifyXml i = formattedStringifyXml' 0
@@ -61,8 +61,8 @@ formattedStringifyXml i = formattedStringifyXml' 0
         ci = getIndentation' i
         x = "<" ++ tag ++ (stringifyXmlElementAttributes attributes)
         y = case children of
-          Just c -> ">\n" ++ (concat $ map ((++"\n") . formattedStringifyXml' (i + 1)) c) ++ ci ++ "</" ++ tag ++ ">"
-          Nothing -> "/>"
+          [] -> "/>"
+          c -> ">\n" ++ (concat $ map ((++"\n") . formattedStringifyXml' (i + 1)) c) ++ ci ++ "</" ++ tag ++ ">"
 
 validXmlElementTagFirstCharacter = isLetter <||> (=='-')
 
@@ -80,7 +80,7 @@ parseXmlElementAttributes = parseXmlElementAttributes' empty
         if null rest
           then unexpectedTokenError "\0" "=" $ -1
           else do
-            let key = foldr (\x acc -> if isSpace x then acc else x : acc) [] key'
+            let key = [x | x <- key', not $ isSpace x]
             let rest' = tail rest
             (_, rest) <- matchCharacterIgnoringSpaces '"' rest'
             (value, rest') <- parseString (/='"') rest
@@ -109,14 +109,12 @@ parseXmlElement xs = do
   (tag', rest) <- parseString (validXmlElementTagFirstCharacter <||> isDigit) rest'
   let tag = c : tag'
   ((attributes, hasChildren), rest') <- parseXmlElementAttributes rest
-  let
-    f = do
-      if hasChildren
-        then do
-          (children, rest) <- parseXmlElementChildren tag rest'
-          return (Just children, rest)
-        else return (Nothing, rest')
-  (children, rest) <- f
+  (children, rest) <- do
+    if hasChildren
+      then do
+        (children, rest) <- parseXmlElementChildren tag rest'
+        return (children, rest)
+      else return ([], rest')
   let element = XmlElement {
     tag = tag,
     attributes = attributes,
