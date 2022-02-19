@@ -6,6 +6,9 @@ module Parsers.Utils (
   ParsedNumber,
   Parser,
 
+  trimAllSpaces,
+  trimSpaces,
+
 -- Predicate utilities
   (<||>),
   (<&&>),
@@ -39,6 +42,21 @@ type ParsingError = (Int, String)
 type ParsingResult a = (a, String)
 type ParsingResponse a = Either ParsingError (ParsingResult a)
 type Parser a = String -> ParsingResponse a
+
+trimSpaces :: String -> String
+trimSpaces = dropWhile isSpace . trimTrailingSpaces
+  where
+    trimTrailingSpaces :: String -> String
+    trimTrailingSpaces [] = []
+    trimTrailingSpaces y@[x] = if isSpace x then [] else y
+    trimTrailingSpaces (x:xs)
+      | null ys && (isSpace x) = ys
+      | otherwise = x : ys
+      where
+        ys = trimTrailingSpaces xs
+
+trimAllSpaces :: String -> String
+trimAllSpaces xs = [x | x <- xs, not $ isSpace x]
 
 -- Predicate utilities
 (<||>) :: Predicate a -> Predicate a -> Predicate a

@@ -11,8 +11,8 @@ numberParsingTest = do
   let response = Parsers.Utils.parseNumber (show num)
   case response of
     Right (result, _)
-      | result == num -> Testing.success "Number"
-    _ -> Testing.failure "Number"
+      | result == num -> Testing.success "Number parsing test successful"
+    _ -> Testing.failure "Number parsing test failed"
 
 boolParsingText :: IO Bool
 boolParsingText = do
@@ -22,8 +22,8 @@ boolParsingText = do
   let response = Parsers.Utils.parseBool "True" "False" (show x)
   case response of
     Right (result, _)
-      | result == x -> Testing.success "Bool"
-    _ -> Testing.failure "Bool"
+      | result == x -> Testing.success "Bool parsing test successful"
+    _ -> Testing.failure "Bool parsing test failed"
 
 main :: IO ()
 main = Testing.runTests [boolParsingText, numberParsingTest]

@@ -12,10 +12,10 @@ testResult s xs = do
   return s
 
 success :: String -> IO Bool
-success = testResult True . ("✔ "++) . (++" parsing test successful.")
+success = testResult True . ("✔ "++) . (++".")
 
 failure :: String -> IO Bool
-failure = testResult True . ("❌ "++) . (++" parsing test failed.")
+failure = testResult True . ("❌ "++) . (++".")
 
 testIsSuccessful :: [IO Bool] -> IO Bool
 testIsSuccessful [] = return True

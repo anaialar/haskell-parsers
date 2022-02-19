@@ -8,8 +8,12 @@ module Parsers.Xml (
 import Data.Char (isSpace, isLetter, isDigit)
 import Data.Map.Strict (Map, insert, empty, toList)
 import Parsers.Utils (
+  Predicate,
   Parser,
+  trimSpaces,
+  trimAllSpaces,
   (<||>),
+  (<&&>),
   pNot,
   unhandledParsingError,
   unexpectedTokenError,
@@ -64,6 +68,7 @@ formattedStringifyXml i = formattedStringifyXml' 0
           [] -> "/>"
           c -> ">\n" ++ (concat $ map ((++"\n") . formattedStringifyXml' (i + 1)) c) ++ ci ++ "</" ++ tag ++ ">"
 
+validXmlElementTagFirstCharacter :: Predicate Char
 validXmlElementTagFirstCharacter = isLetter <||> (=='-')
 
 parseXmlElementAttributes :: Parser ((Map String String), Bool)
@@ -76,15 +81,15 @@ parseXmlElementAttributes = parseXmlElementAttributes' empty
       | y == '>' = return ((acc, True), ys)
       | y == '/' && (head ys == '>') = return ((acc, False), tail ys)
       | otherwise = do
-        (key', rest) <- parseString (/='=') xs
+        (key', rest) <- parseString ((/='=') <&&> (pNot isSpace)) xs
         if null rest
           then unexpectedTokenError "\0" "=" $ -1
           else do
-            let key = [x | x <- key', not $ isSpace x]
-            let rest' = tail rest
-            (_, rest) <- matchCharacterIgnoringSpaces '"' rest'
-            (value, rest') <- parseString (/='"') rest
-            parseXmlElementAttributes' (insert key value acc) $ tail rest'
+            (_, rest) <- matchCharacterIgnoringSpaces '=' rest
+            let key = trimAllSpaces key'
+            (_, rest) <- matchCharacterIgnoringSpaces '"' rest
+            (value, rest) <- parseString (/='"') rest
+            parseXmlElementAttributes' (insert key value acc) $ tail rest
 
 parseXmlElementChildren :: String -> Parser [XmlData]
 parseXmlElementChildren tag = parseXmlElementChildren' []
@@ -105,16 +110,16 @@ parseXmlElementChildren tag = parseXmlElementChildren' []
 
 parseXmlElement :: Parser XmlData
 parseXmlElement xs = do
-  (c, rest') <- parseCharacter validXmlElementTagFirstCharacter xs
-  (tag', rest) <- parseString (validXmlElementTagFirstCharacter <||> isDigit) rest'
+  (c, rest) <- parseCharacter validXmlElementTagFirstCharacter xs
+  (tag', rest) <- parseString (validXmlElementTagFirstCharacter <||> isDigit) rest
   let tag = c : tag'
-  ((attributes, hasChildren), rest') <- parseXmlElementAttributes rest
+  ((attributes, hasChildren), rest) <- parseXmlElementAttributes rest
   (children, rest) <- do
     if hasChildren
       then do
-        (children, rest) <- parseXmlElementChildren tag rest'
+        (children, rest) <- parseXmlElementChildren tag rest
         return (children, rest)
-      else return ([], rest')
+      else return ([], rest)
   let element = XmlElement {
     tag = tag,
     attributes = attributes,
@@ -129,7 +134,8 @@ parseXmlString xs = do
   where
     parseXmlString' :: Parser String
     parseXmlString' xs = do
-      (ys, rest) <- parseString (/='<') xs
+      (ys', rest) <- parseString (/='<') xs
+      let ys = trimSpaces ys'
       if null rest
         then return (ys, rest)
         else do

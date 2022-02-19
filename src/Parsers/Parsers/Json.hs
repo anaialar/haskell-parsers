@@ -127,9 +127,9 @@ parseJsonValue xs =
 
 parseJsonObjectProperty :: Parser (String, JsonData)
 parseJsonObjectProperty ('"':xs) = do
-  (key, rest') <- parseString ((/='"') <&&> (/='\t')) xs
-  (_, rest') <- matchCharacterIgnoringSpaces ':' $ tail rest'
-  (value, rest) <- parseJson rest'
+  (key, rest) <- parseString ((/='"') <&&> (/='\t')) xs
+  (_, rest) <- matchCharacterIgnoringSpaces ':' $ tail rest
+  (value, rest) <- parseJson rest
   return ((key, value), rest)
 
 parseJsonObjectProperty (x:xs)
